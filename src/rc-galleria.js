@@ -82,7 +82,7 @@
                 if( $scope.src && angular.isUndefined($scope.theme)){
                     theme_path = $scope.src;
                 }
-                else if( angular.iDefined($scope.src) && angular.isDefined($scope.theme) ){
+                else if( angular.isDefined($scope.src) && angular.isDefined($scope.theme) ){
                     theme_path = $scope.src + '/' + $scope.theme + '/galleria.' + $scope.theme + '.min.js';
                 }
                 else if(!rcGalleria.path){
