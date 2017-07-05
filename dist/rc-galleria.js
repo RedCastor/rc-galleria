@@ -2,8 +2,8 @@
     "use strict";
     var module = angular.module("rcGalleria", []);
     module.provider("rcGalleria", [ function() {
-        var path;
-        var theme;
+        var path = "";
+        var theme = "";
         var options = {
             showInfo: true,
             _toggleInfo: false
@@ -52,22 +52,23 @@
             template: "<div class=\"galleria\" style=\"height: 100%; width: 100%\" data-ng-class=\"{'galleria-current-iframe': currentSource.iframe, 'galleria-current-video': currentSource.video, 'galleria-current-image': currentSource.image }\">" + '<div data-ng-repeat="source in sources">' + '<a data-ng-if="source.iframe" data-ng-href="{{source.iframe}}"><img data-ng-if="source.thumb" class="iframe" data-ng-src="{{source.thumb}}" data-title="{{source.title}}"' + ' data-description="{{source.description}}" alt="{{source.alt}}" />' + '<span data-ng-if="!source.thumb" class="iframe">{{source.title}}</span>' + "</a>" + '<a data-ng-if="source.video" data-ng-href="{{source.video}}"><img data-ng-if="source.thumb" class="video" data-ng-src="{{source.thumb}}" data-title="{{source.title}}"' + ' data-description="{{source.description}}" alt="{{source.alt}}" />' + '<span data-ng-if="!source.thumb" class="video">{{source.title}}</span>' + "</a>" + '<a data-ng-if="source.image" data-ng-href="{{source.image}}">' + '<img data-ng-src="{{source.thumb}}" data-title="{{source.title}}" data-description="{{source.description}}" alt="{{source.alt}}"' + ' data-big="{{source.big_image}}" />' + "</a>" + "</div>" + "</div>",
             link: function($scope, $element, attrs) {
                 var theme_path = "";
-                if ($scope.src && angular.isUndefined($scope.theme)) {
+                if (angular.isDefined($scope.src) && angular.isUndefined($scope.theme)) {
                     theme_path = $scope.src;
                 } else if (angular.isDefined($scope.src) && angular.isDefined($scope.theme)) {
                     theme_path = $scope.src + "/" + $scope.theme + "/galleria." + $scope.theme + ".min.js";
-                } else if (!rcGalleria.path) {
-                    theme_path = "/lib/galleria/themes/classic/galleria.classic.js";
-                } else if (!rcGalleria.theme) {
+                } else if (rcGalleria.path.length > 0 && rcGalleria.theme.length === 0) {
                     theme_path = rcGalleria.path;
-                } else {
+                } else if (rcGalleria.path.length > 0 && rcGalleria.theme.length > 0) {
                     theme_path = rcGalleria.path + "/" + rcGalleria.theme + "/galleria." + rcGalleria.theme + ".min.js";
                 }
                 $scope.currentSource = {};
                 if (angular.isDefined($scope.images) && angular.isUndefined($scope.sources)) {
                     $scope.sources = $scope.images;
                 }
-                Galleria.loadTheme(theme_path);
+                if (theme_path.length > 0) {
+                    console.log(theme_path);
+                    Galleria.loadTheme(theme_path);
+                }
                 var obj = $element.find(".galleria");
                 var GalleriaApiReference;
                 var initialShowDock = $scope.initialShowDock === "true";

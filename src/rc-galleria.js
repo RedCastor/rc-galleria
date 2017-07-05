@@ -7,8 +7,8 @@
 
     module.provider('rcGalleria', [ function () {
 
-        var path;
-        var theme;
+        var path = '';
+        var theme = '';
         // default config
         var options = {
             showInfo: true,
@@ -79,19 +79,16 @@
 
                 var theme_path = '';
 
-                if( $scope.src && angular.isUndefined($scope.theme)){
+                if( angular.isDefined($scope.src) && angular.isUndefined($scope.theme)){
                     theme_path = $scope.src;
                 }
                 else if( angular.isDefined($scope.src) && angular.isDefined($scope.theme) ){
                     theme_path = $scope.src + '/' + $scope.theme + '/galleria.' + $scope.theme + '.min.js';
                 }
-                else if(!rcGalleria.path){
-                    theme_path = '/lib/galleria/themes/classic/galleria.classic.js';
-                }
-                else if(!rcGalleria.theme){
+                else if (rcGalleria.path.length > 0 && rcGalleria.theme.length === 0){
                     theme_path = rcGalleria.path;
                 }
-                else {
+                else if (rcGalleria.path.length > 0 && rcGalleria.theme.length > 0){
                     theme_path = rcGalleria.path + '/' + rcGalleria.theme + '/galleria.' + rcGalleria.theme + '.min.js';
                 }
 
@@ -102,7 +99,10 @@
                 }
 
 
-                Galleria.loadTheme( theme_path );
+                if (theme_path.length > 0) {
+                    console.log(theme_path);
+                    Galleria.loadTheme( theme_path );
+                }
 
 
                 var obj = $element.find('.galleria');
