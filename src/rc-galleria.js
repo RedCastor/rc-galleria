@@ -57,7 +57,8 @@
                 showInfo: '@',
                 toggleInfo: '@',
                 showCounter: '@',
-                clickNext: '@'
+                clickNext: '@',
+                iFrameTimeoutPoster: '@'
             },
             template: '<div class="galleria" style="height: 100%; width: 100%" data-ng-class="{\'galleria-current-iframe\': currentSource.iframe, \'galleria-current-video\': currentSource.video, \'galleria-current-image\': currentSource.image }">' +
             '<div data-ng-repeat="source in sources">' +
@@ -92,6 +93,7 @@
                     theme_path = rcGalleria.path + '/' + rcGalleria.theme + '/galleria.' + rcGalleria.theme + '.min.js';
                 }
 
+                $scope.iFrameTimeoutPoster = angular.isDefined($scope.iFrameTimeoutPoster) ? $scope.iFrameTimeoutPoster : 0;
                 $scope.currentSource = {};
 
                 if (angular.isDefined($scope.images) && angular.isUndefined($scope.sources)) {
@@ -168,15 +170,18 @@
                             $scope.currentSource = $scope.sources[$scope.currentIndex];
                             $scope.$apply();
 
-                            $scope.$emit('galleria.image-loaded', e);
-
                             if (angular.isDefined($scope.currentSource.iframe) || angular.isDefined($scope.currentSource.video)) {
-                                $scope.$emit('galleria.iframe-load', e);
+                                $scope.$emit('rcGalleria.iframe-load', e);
 
                                 $timeout(function () {
-                                    $(e.imageTarget ).mouseup();
-                                    $scope.$emit('galleria.iframe-loaded', e);
-                                }, 700);
+                                    if ( $scope.iFrameTimeoutPoster > 0 ) {
+                                        $(e.imageTarget ).mouseup();
+                                    }
+                                    $scope.$emit('rcGalleria.iframe-loaded', e);
+                                }, $scope.iFrameTimeoutPoster);
+                            }
+                            else {
+                                $scope.$emit('rcGalleria.image-loaded', e);
                             }
                         });
                     });
