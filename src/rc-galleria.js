@@ -93,7 +93,7 @@
                     theme_path = rcGalleria.path + '/' + rcGalleria.theme + '/galleria.' + rcGalleria.theme + '.min.js';
                 }
 
-                $scope.iFrameTimeoutPoster = angular.isDefined($scope.iFrameTimeoutPoster) ? $scope.iFrameTimeoutPoster : 0;
+                $scope.iFrameTimeoutPoster = angular.isDefined($scope.iFrameTimeoutPoster) ? parseInt($scope.iFrameTimeoutPoster, 10) : 0;
                 $scope.currentSource = {};
 
                 if (angular.isDefined($scope.images) && angular.isUndefined($scope.sources)) {
@@ -166,10 +166,6 @@
                                 firstImageLoaded = true;
                             }
 
-                            $scope.currentIndex = e.index;
-                            $scope.currentSource = $scope.sources[$scope.currentIndex];
-                            $scope.$apply();
-
                             if (angular.isDefined($scope.currentSource.iframe) || angular.isDefined($scope.currentSource.video)) {
                                 $scope.$emit('rcGalleria.iframe-load', e);
 
@@ -183,6 +179,11 @@
                             else {
                                 $scope.$emit('rcGalleria.image-loaded', e);
                             }
+                        });
+                        Galleria.on("loadstart", function(e) {
+                            $scope.currentIndex = e.index;
+                            $scope.currentSource = $scope.sources[$scope.currentIndex];
+                            $scope.$apply();
                         });
                     });
 
