@@ -115,26 +115,36 @@
                     var firstImageLoaded = false;
                     Galleria.ready(function(e) {
                         Galleria.on("image", function(e) {
-                            if (!firstImageLoaded && initialShowDock === true) {
-                                this.$("thumbnails-tab").click();
-                                firstImageLoaded = true;
-                            }
-                            if (angular.isDefined($scope.currentSource.iframe) || angular.isDefined($scope.currentSource.video)) {
-                                $scope.$emit("rcGalleria.iframe-load", e);
-                                $timeout(function() {
-                                    if ($scope.iFrameTimeoutPoster > 0) {
-                                        $(e.imageTarget).mouseup();
-                                    }
-                                    $scope.$emit("rcGalleria.iframe-loaded", e);
-                                }, $scope.iFrameTimeoutPoster);
-                            } else {
-                                $scope.$emit("rcGalleria.image-loaded", e);
+                            if (this === GalleriaApiReference) {
+                                $log.debug("rcGalleria image");
+                                if (!firstImageLoaded && initialShowDock === true) {
+                                    this.$("thumbnails-tab").click();
+                                    firstImageLoaded = true;
+                                }
+                                if (angular.isDefined($scope.currentSource.iframe) || angular.isDefined($scope.currentSource.video)) {
+                                    $timeout(function() {
+                                        if ($scope.iFrameTimeoutPoster > 0) {
+                                            $(e.imageTarget).mouseup();
+                                        }
+                                        $scope.$emit("rcGalleria.iframe-loaded", e);
+                                    }, $scope.iFrameTimeoutPoster);
+                                } else {
+                                    $scope.$emit("rcGalleria.image-loaded", e);
+                                }
                             }
                         });
                         Galleria.on("loadstart", function(e) {
-                            $scope.currentIndex = e.index;
-                            $scope.currentSource = $scope.sources[$scope.currentIndex];
-                            $scope.$apply();
+                            if (this === GalleriaApiReference) {
+                                $scope.currentIndex = e.index;
+                                $scope.currentSource = $scope.sources[$scope.currentIndex];
+                                $scope.$apply();
+                                $log.debug("rcGalleria loadstart");
+                                if (angular.isDefined($scope.currentSource.iframe) || angular.isDefined($scope.currentSource.video)) {
+                                    $scope.$emit("rcGalleria.iframe-load", e);
+                                } else {
+                                    $scope.$emit("rcGalleria.image-load", e);
+                                }
+                            }
                         });
                     });
                 });
