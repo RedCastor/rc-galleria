@@ -48,7 +48,9 @@
                 toggleInfo: "@",
                 showCounter: "@",
                 clickNext: "@",
-                iFrameTimeoutPoster: "@"
+                iFrameTimeoutPoster: "@",
+                iFramePoster: "@",
+                videoPoster: "@"
             },
             template: "<div class=\"galleria\" style=\"height: 100%; width: 100%\" data-ng-class=\"{'galleria-current-iframe': currentSource.iframe, 'galleria-current-video': currentSource.video, 'galleria-current-image': currentSource.image }\">" + '<div data-ng-repeat="source in sources">' + '<a data-ng-if="source.iframe" data-ng-href="{{source.iframe}}"><img data-ng-if="source.thumb" class="iframe" data-ng-src="{{source.thumb}}" data-title="{{source.title}}"' + ' data-description="{{source.description}}" alt="{{source.alt}}" />' + '<span data-ng-if="!source.thumb" class="iframe">{{source.title}}</span>' + "</a>" + '<a data-ng-if="source.video" data-ng-href="{{source.video}}"><img data-ng-if="source.thumb" class="video" data-ng-src="{{source.thumb}}" data-title="{{source.title}}"' + ' data-description="{{source.description}}" alt="{{source.alt}}" />' + '<span data-ng-if="!source.thumb" class="video">{{source.title}}</span>' + "</a>" + '<a data-ng-if="source.image" data-ng-href="{{source.image}}">' + '<img data-ng-src="{{source.thumb}}" data-title="{{source.title}}" data-description="{{source.description}}" alt="{{source.alt}}"' + ' data-big="{{source.big_image}}" />' + "</a>" + "</div>" + "</div>",
             link: function($scope, $element, attrs) {
@@ -62,6 +64,7 @@
                 } else if (rcGalleria.path.length > 0 && rcGalleria.theme.length > 0) {
                     theme_path = rcGalleria.path + "/" + rcGalleria.theme + "/galleria." + rcGalleria.theme + ".min.js";
                 }
+                $scope.iFramePoster = $scope.iFramePoster === "true";
                 $scope.iFrameTimeoutPoster = angular.isDefined($scope.iFrameTimeoutPoster) ? parseInt($scope.iFrameTimeoutPoster, 10) : 0;
                 $scope.currentSource = {};
                 if (angular.isDefined($scope.images) && angular.isUndefined($scope.sources)) {
@@ -104,27 +107,50 @@
                         showInfo: $scope.showInfo === "true",
                         _toggleInfo: $scope.toggleInfo === "true",
                         showCounter: $scope.showCounter === "true",
-                        clicknext: $scope.clickNext === "true"
+                        clicknext: $scope.clickNext === "true",
+                        videoPoster: $scope.videoPoster === "true"
                     }));
                     Galleria.run(obj, {
                         extend: function() {
                             GalleriaApiReference = this;
+                            if (!$scope.iFramePoster) {
+                                var style = $('<style type="text/css">.galleria-current-iframe .galleria-stage .galleria-image img { visibility: hidden; }</style>');
+                                $("html > head").append(style);
+                            }
                         }
                     });
                     $log.debug(Galleria.get());
                     var firstImageLoaded = false;
                     Galleria.ready(function(e) {
+                        $log.debug(e);
+                        $log.debug(this);
+                        if (this._options.swipe && $scope.iFrameTimeoutPoster > 0) {
+                            var self = this;
+                            this.finger.config.oncomplete = function(page) {
+                                var index = Math.max(0, Math.min(parseInt(page, 10), self.getDataLength() - 1)), data = self.getData(index);
+                                $(self._thumbnails[index].container).addClass("active").siblings(".active").removeClass("active");
+                                if (!data) {
+                                    return;
+                                }
+                                if (angular.isUndefined($scope.currentSource.iframe)) {
+                                    self.$("images").find(".galleria-frame").css("opacity", 0).hide().find("iframe").remove();
+                                }
+                                if (self._options.carousel && self._options.carouselFollow) {
+                                    self._carousel.follow(index);
+                                }
+                            };
+                        }
                         Galleria.on("image", function(e) {
                             if (this === GalleriaApiReference) {
-                                $log.debug("rcGalleria image");
                                 if (!firstImageLoaded && initialShowDock === true) {
                                     this.$("thumbnails-tab").click();
                                     firstImageLoaded = true;
                                 }
-                                if (angular.isDefined($scope.currentSource.iframe) || angular.isDefined($scope.currentSource.video)) {
+                                if (angular.isDefined($scope.currentSource.iframe)) {
                                     $timeout(function() {
                                         if ($scope.iFrameTimeoutPoster > 0) {
-                                            $(e.imageTarget).mouseup();
+                                            $(e.imageTarget).click();
+                                            $(e.imageTarget).trigger("mouseup");
                                         }
                                         $scope.$emit("rcGalleria.iframe-loaded", e);
                                     }, $scope.iFrameTimeoutPoster);
@@ -138,8 +164,7 @@
                                 $scope.currentIndex = e.index;
                                 $scope.currentSource = $scope.sources[$scope.currentIndex];
                                 $scope.$apply();
-                                $log.debug("rcGalleria loadstart");
-                                if (angular.isDefined($scope.currentSource.iframe) || angular.isDefined($scope.currentSource.video)) {
+                                if (angular.isDefined($scope.currentSource.iframe)) {
                                     $scope.$emit("rcGalleria.iframe-load", e);
                                 } else {
                                     $scope.$emit("rcGalleria.image-load", e);

@@ -58,7 +58,9 @@
                 toggleInfo: '@',
                 showCounter: '@',
                 clickNext: '@',
-                iFrameTimeoutPoster: '@'
+                iFrameTimeoutPoster: '@',
+                iFramePoster: '@',
+                videoPoster: '@'
             },
             template: '<div class="galleria" style="height: 100%; width: 100%" data-ng-class="{\'galleria-current-iframe\': currentSource.iframe, \'galleria-current-video\': currentSource.video, \'galleria-current-image\': currentSource.image }">' +
             '<div data-ng-repeat="source in sources">' +
@@ -93,6 +95,7 @@
                     theme_path = rcGalleria.path + '/' + rcGalleria.theme + '/galleria.' + rcGalleria.theme + '.min.js';
                 }
 
+                $scope.iFramePoster = $scope.iFramePoster === 'true';
                 $scope.iFrameTimeoutPoster = angular.isDefined($scope.iFrameTimeoutPoster) ? parseInt($scope.iFrameTimeoutPoster, 10) : 0;
                 $scope.currentSource = {};
 
@@ -144,12 +147,19 @@
                         showInfo: $scope.showInfo === 'true',
                         _toggleInfo: $scope.toggleInfo === 'true',
                         showCounter: $scope.showCounter === 'true',
-                        clicknext: $scope.clickNext === 'true'
+                        clicknext: $scope.clickNext === 'true',
+                        videoPoster: $scope.videoPoster === 'true'
                     }));
 
                     Galleria.run(obj, {
                         extend: function(){
                             GalleriaApiReference = this;
+
+                            if (!$scope.iFramePoster) {
+                                //Add Global style for image poster iframe hidden.
+                                var style = $('<style type="text/css">.galleria-current-iframe .galleria-stage .galleria-image img { visibility: hidden; }</style>');
+                                $('html > head').append(style);
+                            }
                         }
                     });
 
@@ -160,22 +170,55 @@
 
                     var firstImageLoaded = false;
                     Galleria.ready(function(e) {
+                        $log.debug(e);
+                        $log.debug(this);
+
+                        //Override finder functions if iFrameTimeoutPoster.
+                        if ( this._options.swipe && $scope.iFrameTimeoutPoster > 0) {
+                            var self = this;
+
+                            //Override Finger Galleria for filter remove iframe only if new current source is not ifrmae or video.
+                            this.finger.config.oncomplete = function(page) {
+
+                                var index = Math.max( 0, Math.min( parseInt( page, 10 ), self.getDataLength() - 1 ) ),
+                                    data = self.getData(index);
+
+                                $( self._thumbnails[ index ].container )
+                                    .addClass( 'active' )
+                                    .siblings( '.active' )
+                                    .removeClass( 'active' );
+
+                                if ( !data ) {
+                                    return;
+                                }
+
+                                //Compatibility with iframe not remove on click if current source is iframe.
+                                if (angular.isUndefined($scope.currentSource.iframe)) {
+                                    // remove video iframes
+                                    self.$( 'images' ).find( '.galleria-frame' ).css('opacity', 0).hide().find( 'iframe' ).remove();
+                                }
+
+                                if ( self._options.carousel && self._options.carouselFollow ) {
+                                    self._carousel.follow( index );
+                                }
+                            };
+                        }
+
                         Galleria.on("image", function(e) {
 
                             if ( this === GalleriaApiReference) {
-
-                                $log.debug('rcGalleria image');
 
                                 if (!firstImageLoaded && initialShowDock === true ) {
                                     this.$('thumbnails-tab').click();
                                     firstImageLoaded = true;
                                 }
 
-                                if (angular.isDefined($scope.currentSource.iframe) || angular.isDefined($scope.currentSource.video)) {
+                                if (angular.isDefined($scope.currentSource.iframe)) {
 
                                     $timeout(function () {
                                         if ( $scope.iFrameTimeoutPoster > 0 ) {
-                                            $(e.imageTarget ).mouseup();
+                                            $(e.imageTarget ).click();
+                                            $(e.imageTarget ).trigger('mouseup');
                                         }
                                         $scope.$emit('rcGalleria.iframe-loaded', e);
                                     }, $scope.iFrameTimeoutPoster);
@@ -192,9 +235,7 @@
                                 $scope.currentSource = $scope.sources[$scope.currentIndex];
                                 $scope.$apply();
 
-                                $log.debug('rcGalleria loadstart');
-
-                                if (angular.isDefined($scope.currentSource.iframe) || angular.isDefined($scope.currentSource.video)) {
+                                if (angular.isDefined($scope.currentSource.iframe)) {
                                     $scope.$emit('rcGalleria.iframe-load', e);
                                 }
                                 else {
